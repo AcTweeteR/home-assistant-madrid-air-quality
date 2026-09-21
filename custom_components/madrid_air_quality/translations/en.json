@@ -1,0 +1,8 @@
+{
+  "title": "Madrid Air Quality & Weather",
+  "config": {"step": {"user": {"title": "Select stations", "description": "Stations come from the official Community of Madrid catalogue.", "data": {"stations": "Stations"}}}, "error": {"no_station": "Select at least one station."}, "abort": {"cannot_connect": "Unable to read the official catalogue.", "already_configured": "This integration is already configured."}},
+  "options": {"step": {"init": {"title": "Stations", "data": {"stations": "Stations"}}}, "error": {"no_station": "Select at least one station."}},
+  "entity": {"sensor": {
+    "magnitude_1": {"name": "Sulfur dioxide (SO2)"}, "magnitude_6": {"name": "Carbon monoxide (CO)"}, "magnitude_7": {"name": "Nitric oxide (NO)"}, "magnitude_8": {"name": "Nitrogen dioxide (NO2)"}, "magnitude_9": {"name": "PM2.5 particles (PM2.5)"}, "magnitude_10": {"name": "PM10 particles (PM10)"}, "magnitude_11": {"name": "PM1 particles (PM1)"}, "magnitude_12": {"name": "Nitrogen oxides (NOx)"}, "magnitude_14": {"name": "Ozone (O3)"}, "magnitude_20": {"name": "Toluene (TOL)"}, "magnitude_22": {"name": "Black Carbon (BC)"}, "magnitude_30": {"name": "Benzene (BEN)"}, "magnitude_42": {"name": "Total hydrocarbons (HCT)"}, "magnitude_44": {"name": "Non-methane hydrocarbons (HNM)"}, "magnitude_431": {"name": "MetaParaXylene (XIL)"}, "magnitude_81": {"name": "Wind speed (VV)"}, "magnitude_82": {"name": "Wind direction (DV)"}, "magnitude_83": {"name": "Temperature (TMP)"}, "magnitude_86": {"name": "Relative humidity (HR)"}, "magnitude_87": {"name": "Atmospheric pressure (PRE)"}, "magnitude_88": {"name": "Solar radiation (RS)"}, "magnitude_89": {"name": "Precipitation (LL)"}
+  }}
+}

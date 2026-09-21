@@ -1,0 +1,10 @@
+{
+  "title": "Calidad del aire y meteorología de Madrid",
+  "config": {"step": {"user": {"title": "Selecciona estaciones", "description": "Las estaciones se obtienen del catálogo oficial de la Comunidad de Madrid.", "data": {"stations": "Estaciones"}}}, "error": {"no_station": "Selecciona al menos una estación."}, "abort": {"cannot_connect": "No se pudo consultar el catálogo oficial.", "already_configured": "La integración ya está configurada."}},
+  "options": {"step": {"init": {"title": "Estaciones", "data": {"stations": "Estaciones"}}}, "error": {"no_station": "Selecciona al menos una estación."}},
+  "entity": {
+    "sensor": {
+      "magnitude_1": {"name": "Dióxido de azufre (SO2)"}, "magnitude_6": {"name": "Monóxido de carbono (CO)"}, "magnitude_7": {"name": "Monóxido de nitrógeno (NO)"}, "magnitude_8": {"name": "Dióxido de nitrógeno (NO2)"}, "magnitude_9": {"name": "Partículas PM2.5 (PM2.5)"}, "magnitude_10": {"name": "Partículas PM10 (PM10)"}, "magnitude_11": {"name": "Partículas PM1 (PM1)"}, "magnitude_12": {"name": "Óxidos de nitrógeno (NOx)"}, "magnitude_14": {"name": "Ozono (O3)"}, "magnitude_20": {"name": "Tolueno (TOL)"}, "magnitude_22": {"name": "Black Carbon (BC)"}, "magnitude_30": {"name": "Benceno (BEN)"}, "magnitude_42": {"name": "Hidrocarburos totales (HCT)"}, "magnitude_44": {"name": "Hidrocarburos no metánicos (HNM)"}, "magnitude_431": {"name": "MetaParaXileno (XIL)"}, "magnitude_81": {"name": "Velocidad del viento (VV)"}, "magnitude_82": {"name": "Dirección del viento (DV)"}, "magnitude_83": {"name": "Temperatura (TMP)"}, "magnitude_86": {"name": "Humedad relativa (HR)"}, "magnitude_87": {"name": "Presión atmosférica (PRE)"}, "magnitude_88": {"name": "Radiación solar (RS)"}, "magnitude_89": {"name": "Precipitación (LL)"}
+    }
+  }
+}
