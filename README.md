@@ -1,54 +1,160 @@
 # Madrid Air Quality & Weather
 
-Integración personalizada de Home Assistant para las estaciones de la Red de Calidad del Aire de la Comunidad de Madrid. Es un proyecto comunitario independiente y no está afiliado ni respaldado por la Comunidad de Madrid.
+[![HACS validation](https://github.com/AcTweeteR/home-assistant-madrid-air-quality/actions/workflows/hacs.yml/badge.svg)](https://github.com/AcTweeteR/home-assistant-madrid-air-quality/actions)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-custom%20integration-18BCF2.svg)](https://www.home-assistant.io/)
+[![License](https://img.shields.io/github/license/AcTweeteR/home-assistant-madrid-air-quality)](LICENSE)
 
-## Qué hace
+Home Assistant custom integration for the official air-quality and meteorological monitoring stations operated by the Comunidad de Madrid, Spain.
 
-- Configuración exclusivamente desde la interfaz de Home Assistant, sin YAML, tokens ni credenciales.
-- Una config entry para el servicio y un Device independiente por cada estación seleccionada.
-- Selección y modificación de varias estaciones desde el config flow y Options Flow.
-- Una entidad por cada magnitud que la estación publica. Las magnitudes nuevas aparecen automáticamente en la siguiente actualización.
-- IDs estables basados en el código oficial de estación y el código oficial de magnitud.
-- Valores inválidos (`N`, vacío, `***`, `NaN` y equivalentes) se exponen como no disponibles, nunca como cero.
+**Español:** [documentación en español](README.es.md)
 
-## Fuentes oficiales
+> Independent community project. It is not affiliated with or endorsed by the Comunidad de Madrid.
 
-La integración usa exclusivamente recursos JSON del [Portal de Datos Abiertos de la Comunidad de Madrid](https://datos.comunidad.madrid/), servido por CKAN:
+## Features
 
-1. `Red de Calidad del Aire. Estaciones` para catálogo, códigos, nombres y metadatos.
-2. `Red de Calidad del Aire. Datos del día en curso` para contaminantes.
-3. `Red de calidad del aire. Datos meteorológicos del mes en curso` para meteorología.
+- UI-only setup: no YAML, account, token or credentials.
+- Select one or several monitoring stations.
+- One Home Assistant device per selected station.
+- Dynamic entities for every magnitude published by each station.
+- New official magnitude codes can appear automatically without reinstalling the integration.
+- Stable entity IDs/unique IDs based on official station and magnitude codes.
+- Shared polling: the integration downloads the official measurement resources once per update, not once per sensor.
+- Invalid official values are exposed as unavailable and are never silently converted to zero.
+- Spanish and English translations.
+- HACS installation and updates.
 
-El catálogo se descarga al configurar. Cada actualización coordinada realiza dos peticiones, una por recurso de mediciones, y todas las entidades consumen el mismo snapshot; nunca se hace una petición por sensor. Los ficheros son horarios y se consultan cada 20 minutos para reflejar la frecuencia de actualización indicada por la fuente. Las horas se interpretan en `Europe/Madrid`, no como UTC.
+## Install with HACS
 
-La propia Comunidad indica que sus datos meteorológicos son informativos para el contexto de calidad del aire; los datos meteorológicos oficiales son los de [AEMET](https://www.aemet.es/).
+### 1. Add this repository
 
-## Instalación mediante HACS
+Until the integration is included in the default HACS catalog:
 
-1. En HACS, abre **Integraciones** → menú ⋮ → **Repositorios personalizados**.
-2. Añade `AcTweeteR/home-assistant-madrid-air-quality` con tipo **Integration**.
-3. Instala **Madrid Air Quality & Weather** y reinicia Home Assistant.
-4. En **Ajustes → Dispositivos y servicios → Añadir integración**, busca el nombre y selecciona una o más estaciones.
+1. Open **HACS → Integrations**.
+2. Open the **⋮** menu and choose **Custom repositories**.
+3. Enter:
 
-El repositorio está preparado para releases semánticas (`v1.0.0`, `v1.0.1`, `v1.1.0`). HACS detecta releases de GitHub. Para publicar la primera release, el propietario debe crear en GitHub la etiqueta y release `v1.0.0` apuntando al commit validado; el workflow comprueba que coincida con `manifest.json`.
+```text
+https://github.com/AcTweeteR/home-assistant-madrid-air-quality
+```
 
-## Entidades
+4. Select **Integration** as the category.
+5. Add the repository.
+6. Find **Madrid Air Quality & Weather** in HACS and select **Download**.
+7. Restart Home Assistant if HACS requests it.
 
-El Device usa el nombre oficial de la estación, por ejemplo `Móstoles`. Las entidades usan nombres propios y `has_entity_name`, por lo que Home Assistant compone nombres como:
+### 2. Add the integration to Home Assistant
+
+After HACS has downloaded it:
+
+1. Open **Settings → Devices & services**.
+2. Select **Add integration**.
+3. Search for **Madrid Air Quality & Weather**.
+4. Select one or more stations from the official catalog.
+5. Finish setup.
+
+No API key, username or password is required.
+
+> Installing the files in HACS and adding the integration in Home Assistant are two separate steps.
+
+## Updating
+
+HACS monitors published GitHub releases. When a newer compatible release is available, HACS exposes the update through Home Assistant's normal update mechanism.
+
+Review the release notes, install the update in HACS and restart Home Assistant if requested.
+
+## Stations and devices
+
+The station catalog is obtained from the official Comunidad de Madrid dataset. Each selected station becomes a separate Home Assistant device, identified internally by its official station code.
+
+You can change the selected stations later from:
+
+**Settings → Devices & services → Madrid Air Quality & Weather → Configure**
+
+Adding or removing a station does not require editing YAML.
+
+## Sensors
+
+Every selected station exposes the measurements that the official source actually publishes for it. Stations do not need to have the same set of sensors.
+
+Typical meteorological entities include:
+
+| Measurement | Abbreviation | Typical unit |
+| --- | --- | --- |
+| Temperature | TMP | °C |
+| Relative humidity | HR | % |
+| Atmospheric pressure | PRE | mbar |
+| Wind speed | VV | m/s |
+| Wind direction | DV | ° |
+| Solar radiation | RS | W/m² |
+| Precipitation | LL | l/m² |
+
+Typical air-quality entities include SO₂, CO, NO, NO₂, NOx, O₃, PM10, PM2.5, PM1, benzene, toluene, Black Carbon and hydrocarbons when the station publishes them.
+
+Home Assistant combines the device and entity names, producing names such as:
 
 - `Móstoles Temperatura (TMP)`
 - `Móstoles Humedad relativa (HR)`
-- `Móstoles Presión atmosférica (PRE)`
 - `Móstoles Dióxido de nitrógeno (NO2)`
 - `Móstoles Partículas PM10 (PM10)`
 
-Se incluyen las magnitudes meteorológicas y de contaminación documentadas por la Comunidad, además de códigos desconocidos que aparezcan en el futuro. Para un código desconocido se conserva el código oficial y no se inventan nombre, unidad ni device class.
+Unknown future magnitude codes are not discarded. The integration preserves their official code rather than inventing a meaning, unit or device class.
 
-## Privacidad y limitaciones
+See [Entities and sensors](docs/sensors.md) for details.
 
-La integración es de solo lectura y no almacena credenciales, no acepta URLs arbitrarias, no abre puertos y no ejecuta código remoto. La disponibilidad depende del portal público. Los datos automáticos pueden estar pendientes de validación y no sustituyen información oficial o avisos de calidad del aire.
+## Data sources and update frequency
 
-## Desarrollo y validación
+The integration uses only official resources from the [Comunidad de Madrid Open Data Portal](https://datos.comunidad.madrid/):
+
+- **Red de Calidad del Aire. Estaciones** — station catalog and metadata.
+- **Red de Calidad del Aire. Datos del día en curso** — current-day air-quality measurements.
+- **Red de calidad del aire. Datos meteorológicos del mes en curso** — meteorological observations.
+
+Home Assistant polls the measurement resources every 20 minutes. The value timestamp is the observation timestamp supplied by the source, interpreted in the Madrid time zone; the download time is not presented as the measurement time.
+
+Polling every 20 minutes does **not** imply that every official dataset receives a new observation every 20 minutes. Freshness ultimately depends on the Comunidad de Madrid source.
+
+The Comunidad de Madrid states that meteorological information from this network is contextual information for air-quality monitoring; official meteorological information is provided by [AEMET](https://www.aemet.es/).
+
+## Availability and invalid values
+
+Official validation flags and missing values are respected. Empty, invalid or non-numeric measurements are not converted to `0`.
+
+A temporarily missing reading does not cause Home Assistant to forget the sensor. Previously discovered magnitude codes are retained so entities remain stable across restarts and temporary source gaps.
+
+## Privacy and security
+
+The integration is read-only. It:
+
+- requires no credentials;
+- opens no inbound ports;
+- accepts no arbitrary server URL;
+- executes no downloaded code;
+- sends no commands to monitoring stations.
+
+Home Assistant only makes HTTPS requests to the public Comunidad de Madrid data service.
+
+## Troubleshooting
+
+If the integration cannot be added or data becomes unavailable:
+
+1. Verify that Home Assistant has Internet access.
+2. Check the official Comunidad de Madrid Open Data portal.
+3. Confirm that the integration is still present under **HACS → Integrations**.
+4. Restart Home Assistant after a new installation if it was requested.
+5. Check **Settings → System → Logs** for `madrid_air_quality`.
+6. Download integration diagnostics before opening an issue when possible.
+
+See [Troubleshooting](docs/troubleshooting.md) for detailed guidance.
+
+## Documentation
+
+- [Installation](docs/installation.md)
+- [Configuration](docs/configuration.md)
+- [Entities and sensors](docs/sensors.md)
+- [Troubleshooting](docs/troubleshooting.md)
+- [Changelog](CHANGELOG.md)
+
+## Development
 
 ```bash
 pip install -r requirements_test.txt
@@ -56,8 +162,10 @@ pytest -q
 ruff check .
 ```
 
-GitHub Actions ejecuta tests, Ruff, Hassfest y la validación de HACS. La suite usa fixtures locales sanitizadas y no depende de Internet.
+GitHub Actions validates tests, Ruff, Hassfest, HACS metadata and release/version consistency.
 
-## Licencia y atribución
+## License and attribution
 
-El software se distribuye bajo [MIT](LICENSE). Los datos de la Comunidad de Madrid se publican bajo [Creative Commons Attribution](https://creativecommons.org/licenses/by/4.0/); consulta sus condiciones en cada dataset oficial.
+The integration software is distributed under the [MIT License](LICENSE).
+
+The measurements belong to their respective official source. Review the licensing and reuse terms published with each Comunidad de Madrid dataset before redistributing the underlying data.
