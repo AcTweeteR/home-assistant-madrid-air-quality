@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -82,9 +82,10 @@ def parse_catalog(payload: Any) -> dict[str, Station]:
 
 def _timestamp(row: dict[str, Any], hour: int) -> datetime | None:
     try:
-        return datetime(
-            int(row["ano"]), int(row["mes"]), int(row["dia"]), hour % 24, tzinfo=MADRID
-        )
+        date = datetime(int(row["ano"]), int(row["mes"]), int(row["dia"]), tzinfo=MADRID)
+        if hour == 24:
+            return date + timedelta(days=1)
+        return date.replace(hour=hour)
     except (KeyError, TypeError, ValueError):
         return None
 

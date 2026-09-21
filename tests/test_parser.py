@@ -65,3 +65,28 @@ def test_known_magnitude_metadata_is_preserved():
 def test_observation_timestamp_is_local_madrid_time():
     metrics, _ = parse_measurements([load("weather.json")], {"28092005"})
     assert metrics["28092005"]["83"].observed_at.tzinfo.key == "Europe/Madrid"
+
+
+def test_h24_is_midnight_of_the_following_day_and_wins_over_h23():
+    payload = {
+        "data": [
+            {
+                "punto_muestreo": "28092005_83_89",
+                "magnitud": 83,
+                "ano": 2026,
+                "mes": 9,
+                "dia": 21,
+                "h23": 10.0,
+                "v23": "V",
+                "h24": 11.0,
+                "v24": "V",
+            }
+        ]
+    }
+
+    metrics, latest = parse_measurements([payload], {"28092005"})
+
+    metric = metrics["28092005"]["83"]
+    assert metric.value == 11.0
+    assert metric.observed_at.isoformat() == "2026-09-22T00:00:00+02:00"
+    assert latest == metric.observed_at
