@@ -24,7 +24,7 @@ class MadridAirQualityApi:
             async with self._session.get(
                 url,
                 timeout=self._timeout,
-                headers={"User-Agent": "home-assistant-madrid-air-quality/1.0.0"},
+                headers={"User-Agent": "home-assistant-madrid-air-quality/1.0.1"},
             ) as response:
                 response.raise_for_status()
                 return await response.json(content_type=None)
