@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.2 - 2026-09-22
+
+- Use the current official meteorological CSV resource instead of the stale JSON mirror.
+- Ignore future hourly placeholders so temporary (`T`) observations are not hidden by a later invalid hour.
+
 ## 1.0.1 - 2026-09-22
 
 - Correctly interpret the official `h24` observation as midnight at the start of the following day.

@@ -1,8 +1,11 @@
-"""HTTP client for the official CKAN JSON resources."""
+"""HTTP client for the official Comunidad de Madrid resources."""
 
 from __future__ import annotations
 
 import asyncio
+import csv
+import io
+import json
 from typing import Any
 
 from aiohttp import ClientError, ClientSession, ClientTimeout
@@ -19,16 +22,29 @@ class MadridAirQualityApi:
         self._session = session
         self._timeout = ClientTimeout(total=45)
 
-    async def _get_json(self, url: str) -> Any:
+    async def _request(self, url: str) -> str:
         try:
             async with self._session.get(
                 url,
                 timeout=self._timeout,
-                headers={"User-Agent": "home-assistant-madrid-air-quality/1.0.1"},
+                headers={"User-Agent": "home-assistant-madrid-air-quality/1.0.2"},
             ) as response:
                 response.raise_for_status()
-                return await response.json(content_type=None)
-        except (ClientError, asyncio.TimeoutError, ValueError) as err:
+                return await response.text()
+        except (ClientError, asyncio.TimeoutError) as err:
+            raise MadridAirQualityApiError(f"No se pudo leer {url}: {err}") from err
+
+    async def _get_json(self, url: str) -> Any:
+        try:
+            return json.loads(await self._request(url))
+        except (MadridAirQualityApiError, ValueError) as err:
+            raise MadridAirQualityApiError(f"No se pudo leer {url}: {err}") from err
+
+    async def _get_csv(self, url: str) -> Any:
+        try:
+            text = (await self._request(url)).lstrip("\ufeff")
+            return {"data": list(csv.DictReader(io.StringIO(text), delimiter=";"))}
+        except (MadridAirQualityApiError, csv.Error, ValueError) as err:
             raise MadridAirQualityApiError(f"No se pudo leer {url}: {err}") from err
 
     async def catalog(self) -> Any:
@@ -36,4 +52,4 @@ class MadridAirQualityApi:
 
     async def measurements(self) -> list[Any]:
         # Two requests per coordinated refresh, never one request per entity.
-        return await asyncio.gather(self._get_json(AIR_URL), self._get_json(WEATHER_URL))
+        return await asyncio.gather(self._get_json(AIR_URL), self._get_csv(WEATHER_URL))

@@ -41,7 +41,7 @@ class MadridAirQualityCoordinator(DataUpdateCoordinator[Snapshot]):
             if not self.catalog:
                 await self.async_load_catalog()
             payloads = await self.api.measurements()
-            metrics, observed = parse_measurements(payloads, self.station_codes)
+            metrics, observed = parse_measurements(payloads, self.station_codes, dt_util.now())
             stations = {code: self.catalog[code] for code in self.station_codes if code in self.catalog}
             known = {station: set(codes) for station, codes in self.entry.data.get(CONF_KNOWN_METRICS, {}).items()}
             for station, station_metrics in metrics.items():
