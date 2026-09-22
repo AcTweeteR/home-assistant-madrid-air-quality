@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.5 - 2026-09-22
+
+- Correct sensor device classes for the official SO2, CO, NO, NO2 and O3 magnitudes.
+- Mark wind direction as an angle measurement and use the native atmospheric-pressure and precipitation classes.
+- Expose hourly precipitation in Home Assistant's canonical `mm` unit; the official `l/m²` value is numerically equivalent.
+
 ## 1.0.4 - 2026-09-22
 
 - Use the official AZUL_INTERNET latest hourly meteorological page for the same 28 Comunidad de Madrid air-quality stations.
