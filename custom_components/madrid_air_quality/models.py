@@ -31,6 +31,7 @@ class Metric:
     valid: bool
     observed_at: datetime | None
     raw_validation: str | None = None
+    data_source: str | None = None
 
 
 @dataclass
@@ -50,9 +51,12 @@ class Snapshot:
             "parameters": self.metric_codes,
             "last_observation": {
                 station: {
-                    code: metric.observed_at.isoformat()
-                    if metric.observed_at
-                    else None
+                    code: {
+                        "observed_at": metric.observed_at.isoformat()
+                        if metric.observed_at
+                        else None,
+                        "data_source": metric.data_source,
+                    }
                     for code, metric in values.items()
                 }
                 for station, values in self.metrics.items()

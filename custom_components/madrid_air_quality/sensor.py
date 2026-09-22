@@ -111,6 +111,7 @@ class MadridSensor(CoordinatorEntity[MadridAirQualityCoordinator], SensorEntity)
             "official_abbreviation": metric.abbreviation if metric else None,
             "observation_time": metric.observed_at.isoformat() if metric and metric.observed_at else None,
             "official_validation": metric.raw_validation if metric else None,
+            "data_source": metric.data_source if metric else None,
         }
 
     @property

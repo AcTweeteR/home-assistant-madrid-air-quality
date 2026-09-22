@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4 - 2026-09-22
+
+- Use the official AZUL_INTERNET latest hourly meteorological page for the same 28 Comunidad de Madrid air-quality stations.
+- Keep the current CSV meteorological dataset as a safe fallback when the online page is unavailable or invalid.
+- Expose the meteorological source and clarify that online values are automatic, unvalidated hourly means.
+- Poll the hourly source every 60 minutes instead of implying 20-minute meteorological freshness.
+
 ## 1.0.3 - 2026-09-22
 
 - Keep the latest valid or provisional (`T`) pollutant observation when a newer source row is empty or invalid (`N`).

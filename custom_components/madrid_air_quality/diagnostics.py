@@ -8,6 +8,7 @@ from .const import (
     SOURCE_AIR,
     SOURCE_CATALOG,
     SOURCE_NAME,
+    SOURCE_ONLINE_WEATHER,
     SOURCE_WEATHER,
     VERSION,
 )
@@ -19,7 +20,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
         "integration_version": VERSION,
         "source": SOURCE_NAME,
         "catalog": SOURCE_CATALOG,
-        "measurements": [SOURCE_AIR, SOURCE_WEATHER],
+        "measurements": [SOURCE_AIR, SOURCE_ONLINE_WEATHER, SOURCE_WEATHER],
         "selected_stations": list(entry.data.get("stations", [])),
         "snapshot": coordinator.data.as_diagnostic() if coordinator.data else None,
         "last_update_success": coordinator.last_update_success,

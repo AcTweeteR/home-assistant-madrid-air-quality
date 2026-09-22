@@ -13,7 +13,7 @@ Integración personalizada para Home Assistant que incorpora las estaciones ofic
 - Crea automáticamente los sensores que publique cada estación.
 - Conserva IDs estables y recuerda magnitudes aunque falten temporalmente.
 - Admite nuevos códigos oficiales sin tener que actualizar una lista cerrada de sensores.
-- Datos meteorológicos y de calidad del aire.
+- Datos meteorológicos horarios de las mismas estaciones y datos de calidad del aire.
 - Instalación y actualizaciones mediante HACS.
 
 ## Instalación con HACS
@@ -82,13 +82,16 @@ La integración utiliza exclusivamente recursos públicos oficiales de la Comuni
 
 - **Red de Calidad del Aire. Estaciones**
 - **Red de Calidad del Aire. Datos del día en curso**
-- **Red de calidad del aire. Datos meteorológicos del mes en curso**
+- [**Páginas de estación AZUL_INTERNET**](https://gestiona.comunidad.madrid/azul_internet/html/web/DatosEstacionAccion.icm?ESTADO_MENU=2&idEstacion=6): última media horaria de VV, DV, TMP, HR, PRE, RS y LL para la misma estación. El ID web está cruzado con el código oficial de las 28 estaciones del catálogo.
+- **Red de calidad del aire. Datos meteorológicos del mes en curso** como respaldo si la página online no responde o no contiene datos válidos.
 
-La integración consulta las mediciones cada 20 minutos. Todos los sensores reutilizan la misma descarga; no se realiza una petición por entidad.
+La integración consulta la fuente meteorológica horaria cada 60 minutos. Todos los sensores de una estación reutilizan la misma respuesta; no se realiza una petición por entidad.
 
-Esto no significa que la Comunidad publique un valor nuevo cada 20 minutos. La antigüedad de la medición depende de la actualización de cada fuente oficial. La entidad conserva el timestamp de la observación real.
+La web oficial expresa la hora en formato solar. La integración la convierte a Europe/Madrid aplicando +2 en verano y +1 en invierno. Son medias horarias automáticas pendientes de revisión, no datos instantáneos. Cada entidad conserva `observation_time` y muestra `data_source`.
 
-Los datos meteorológicos de esta red tienen carácter informativo en el contexto de calidad del aire. Para información meteorológica oficial debe consultarse AEMET.
+La fuente online no proporciona un marcador V/T/N para meteorología; por eso `official_validation` queda vacío y la semántica de “pendiente de validación” procede de la advertencia explícita de la propia página. Los valores vacíos o `***` nunca se convierten en cero.
+
+Los datos meteorológicos de esta red tienen carácter informativo en el contexto de calidad del aire. Para previsiones o información distinta de la observación de estas estaciones debe consultarse el servicio meteorológico oficial correspondiente.
 
 ## Datos inválidos
 

@@ -16,7 +16,7 @@ No `configuration.yaml` changes are required.
 
 ## Polling
 
-Measurement resources are polled every 20 minutes. A coordinated snapshot is shared by all entities, so adding more sensors does not produce one HTTP request per sensor.
+Measurement resources are polled every 60 minutes, matching the hourly publication cadence of the official meteorological pages. A coordinated snapshot is shared by all entities. The integration makes at most one online page request per selected station, not one request per sensor, and keeps the official CSV as fallback.
 
 The observation timestamp supplied by the source is kept separate from the time at which Home Assistant downloads the resource.
 

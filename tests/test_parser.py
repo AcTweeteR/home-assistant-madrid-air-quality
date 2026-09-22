@@ -5,10 +5,14 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
+from custom_components.madrid_air_quality.const import ONLINE_STATION_IDS
+from custom_components.madrid_air_quality.coordinator import merge_metric_sources
+from custom_components.madrid_air_quality.models import Metric
 from custom_components.madrid_air_quality.parser import (
     ParseError,
     parse_catalog,
     parse_measurements,
+    parse_online_weather,
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -193,3 +197,107 @@ def test_wind_speed_keeps_official_meters_per_second_unit():
     metrics, _ = parse_measurements([payload], {"28092005"})
 
     assert metrics["28092005"]["81"].unit == "m/s"
+
+
+def test_online_mostoles_weather_parses_hour_and_official_units():
+    html = (FIXTURES / "online_mostoles.html").read_text()
+
+    metrics = parse_online_weather(
+        html,
+        "28092005",
+        "Tue, 22 Sep 2026 04:33:00 GMT",
+        datetime(2026, 9, 22, 6, 33, tzinfo=ZoneInfo("Europe/Madrid")),
+    )
+
+    assert metrics["83"].value == 19.4
+    assert metrics["83"].unit == "°C"
+    assert metrics["81"].value == 0.7
+    assert metrics["81"].unit == "m/s"
+    assert metrics["89"].value == 0
+    assert metrics["83"].observed_at.isoformat() == "2026-09-22T06:00:00+02:00"
+    assert metrics["83"].raw_validation is None
+    assert metrics["83"].data_source is not None
+
+
+def test_online_weather_parses_a_second_official_station():
+    html = (FIXTURES / "online_alcorcon.html").read_text()
+
+    metrics = parse_online_weather(
+        html,
+        "28007004",
+        "Tue, 22 Sep 2026 04:33:00 GMT",
+        datetime(2026, 9, 22, 6, 33, tzinfo=ZoneInfo("Europe/Madrid")),
+    )
+
+    assert metrics["83"].value == 22.8
+    assert metrics["86"].value == 34
+    assert metrics["88"].value == 32
+
+
+def test_online_weather_rejects_invalid_cells_without_turning_them_into_zero():
+    html = (FIXTURES / "online_mostoles.html").read_text().replace(">19.4<", ">***<")
+
+    metrics = parse_online_weather(
+        html,
+        "28092005",
+        "Tue, 22 Sep 2026 04:33:00 GMT",
+        datetime(2026, 9, 22, 6, 33, tzinfo=ZoneInfo("Europe/Madrid")),
+    )
+
+    assert metrics["83"].value is None
+    assert metrics["83"].valid is False
+
+
+@pytest.mark.parametrize(
+    ("response_date", "now", "expected"),
+    [
+        (
+            "Sun, 29 Mar 2026 04:33:00 GMT",
+            datetime(2026, 3, 29, 6, 33, tzinfo=ZoneInfo("Europe/Madrid")),
+            "2026-03-29T06:00:00+02:00",
+        ),
+        (
+            "Sun, 25 Oct 2026 04:33:00 GMT",
+            datetime(2026, 10, 25, 5, 33, tzinfo=ZoneInfo("Europe/Madrid")),
+            "2026-10-25T05:00:00+01:00",
+        ),
+    ],
+)
+def test_online_weather_applies_summer_and_winter_solar_offsets(response_date, now, expected):
+    html = (FIXTURES / "online_mostoles.html").read_text()
+
+    metrics = parse_online_weather(html, "28092005", response_date, now)
+
+    assert metrics["83"].observed_at.isoformat() == expected
+
+
+def test_online_weather_supports_24_00_solar_midnight():
+    html = (FIXTURES / "online_mostoles.html").read_text().replace("04:00", "24:00")
+
+    metrics = parse_online_weather(
+        html,
+        "28092005",
+        "Tue, 22 Sep 2026 23:33:00 GMT",
+        datetime(2026, 9, 23, 1, 33, tzinfo=ZoneInfo("Europe/Madrid")),
+    )
+
+    assert metrics["83"].observed_at.isoformat() == "2026-09-23T02:00:00+02:00"
+
+
+def test_online_station_mapping_covers_current_official_catalog():
+    catalog = parse_catalog(load("catalog.json"))
+
+    assert len(ONLINE_STATION_IDS) == 28
+    assert "28092005" in ONLINE_STATION_IDS
+    assert "28079004" not in ONLINE_STATION_IDS
+    assert catalog["28092005"].name == "Móstoles"
+
+
+def test_invalid_online_weather_does_not_hide_valid_csv_fallback():
+    observed_at = datetime(2026, 9, 21, tzinfo=ZoneInfo("Europe/Madrid"))
+    fallback = Metric("83", "Temperatura", "TMP", "°C", 21.1, True, observed_at, "V", "CSV")
+    invalid_online = Metric("83", "Temperatura", "TMP", "°C", None, False, observed_at, None, "online")
+
+    merged = merge_metric_sources({"28092005": {"83": fallback}}, {"28092005": {"83": invalid_online}})
+
+    assert merged["28092005"]["83"] is fallback

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import timedelta
 from typing import Any
 
@@ -11,9 +12,29 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from homeassistant.util import dt as dt_util
 
 from .api import MadridAirQualityApi, MadridAirQualityApiError
-from .const import CONF_KNOWN_METRICS, CONF_STATIONS, DOMAIN, UPDATE_INTERVAL_MINUTES
+from .const import (
+    CONF_KNOWN_METRICS,
+    CONF_STATIONS,
+    DOMAIN,
+    SOURCE_AIR,
+    SOURCE_WEATHER,
+    UPDATE_INTERVAL_MINUTES,
+)
 from .models import Snapshot
 from .parser import parse_catalog, parse_measurements
+
+
+def merge_metric_sources(
+    fallback: dict[str, dict[str, Any]], online: dict[str, dict[str, Any]]
+) -> dict[str, dict[str, Any]]:
+    """Prefer usable online readings while retaining safe CSV fallbacks."""
+    merged = {station: dict(values) for station, values in fallback.items()}
+    for station, values in online.items():
+        station_metrics = merged.setdefault(station, {})
+        for code, metric in values.items():
+            if metric.valid or code not in station_metrics or not station_metrics[code].valid:
+                station_metrics[code] = metric
+    return merged
 
 
 class MadridAirQualityCoordinator(DataUpdateCoordinator[Snapshot]):
@@ -41,7 +62,24 @@ class MadridAirQualityCoordinator(DataUpdateCoordinator[Snapshot]):
             if not self.catalog:
                 await self.async_load_catalog()
             payloads = await self.api.measurements()
-            metrics, observed = parse_measurements(payloads, self.station_codes, dt_util.now())
+            now = dt_util.now()
+            air_metrics, _ = parse_measurements(
+                [payloads[0]], self.station_codes, now, SOURCE_AIR
+            )
+            fallback_weather, _ = parse_measurements(
+                [payloads[1]], self.station_codes, now, SOURCE_WEATHER
+            )
+            metrics = merge_metric_sources(air_metrics, fallback_weather)
+            online_results = await asyncio.gather(
+                *(self.api.online_weather(station, now) for station in self.station_codes),
+                return_exceptions=True,
+            )
+            errors: list[str] = []
+            for station, result in zip(self.station_codes, online_results, strict=True):
+                if isinstance(result, Exception):
+                    errors.append(str(result))
+                    continue
+                metrics = merge_metric_sources(metrics, {station: result})
             stations = {code: self.catalog[code] for code in self.station_codes if code in self.catalog}
             known = {station: set(codes) for station, codes in self.entry.data.get(CONF_KNOWN_METRICS, {}).items()}
             for station, station_metrics in metrics.items():
@@ -52,6 +90,15 @@ class MadridAirQualityCoordinator(DataUpdateCoordinator[Snapshot]):
                     self.entry,
                     data={**self.entry.data, CONF_KNOWN_METRICS: serialised_known},
                 )
-            return Snapshot(stations, metrics, observed or dt_util.now())
+            observed = max(
+                (
+                    metric.observed_at
+                    for values in metrics.values()
+                    for metric in values.values()
+                    if metric.observed_at
+                ),
+                default=None,
+            )
+            return Snapshot(stations, metrics, observed or now, errors)
         except (MadridAirQualityApiError, ValueError) as err:
             raise UpdateFailed(str(err)) from err

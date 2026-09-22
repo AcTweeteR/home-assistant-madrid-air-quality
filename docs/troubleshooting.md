@@ -22,7 +22,9 @@ The integration remembers previously discovered magnitude codes so temporary sou
 
 ## Data seems old
 
-Home Assistant polls every 20 minutes, but that does not force the official source to publish new data. Check the entity's observation timestamp. Meteorological and air-quality datasets may have different publication schedules.
+Home Assistant polls the official hourly meteorological page every 60 minutes, but polling does not force the source to publish a new mean. Check `observation_time` and `data_source`. The page's values are automatic and pending validation. If the online page fails, the entity may legitimately show a much older observation from the official CSV fallback; this is preferable to inventing a value.
+
+If `data_source` is the AZUL_INTERNET page, the timestamp is converted from the page's solar hour to Europe/Madrid. If it is the CSV fallback, its timestamp comes from the monthly open-data file.
 
 ## Logs and diagnostics
 

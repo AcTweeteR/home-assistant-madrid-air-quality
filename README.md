@@ -18,7 +18,7 @@ Home Assistant custom integration for the official air-quality and meteorologica
 - Dynamic entities for every magnitude published by each station.
 - New official magnitude codes can appear automatically without reinstalling the integration.
 - Stable entity IDs/unique IDs based on official station and magnitude codes.
-- Shared polling: the integration downloads the official measurement resources once per update, not once per sensor.
+- Shared polling: the integration downloads the official measurement resources once per update, not once per sensor or entity.
 - Invalid official values are exposed as unavailable and are never silently converted to zero.
 - Spanish and English translations.
 - HACS installation and updates.
@@ -107,13 +107,16 @@ The integration uses only official resources from the [Comunidad de Madrid Open 
 
 - **Red de Calidad del Aire. Estaciones** — station catalog and metadata.
 - **Red de Calidad del Aire. Datos del día en curso** — current-day air-quality measurements.
-- **Red de calidad del aire. Datos meteorológicos del mes en curso** — meteorological observations.
+- [**AZUL_INTERNET station pages**](https://gestiona.comunidad.madrid/azul_internet/html/web/DatosEstacionAccion.icm?ESTADO_MENU=2&idEstacion=6) — the latest hourly meteorological mean for the same station, including VV, DV, TMP, HR, PRE, RS and LL. The station ID is mapped to the official station code for all 28 stations in the catalogue.
+- **Red de calidad del aire. Datos meteorológicos del mes en curso** — fallback meteorological observations when the online station page cannot be read.
 
-Home Assistant polls the measurement resources every 20 minutes. The value timestamp is the observation timestamp supplied by the source, interpreted in the Madrid time zone; the download time is not presented as the measurement time.
+Home Assistant polls the hourly meteorological source every 60 minutes. Air-quality and fallback CSV data are included in the same coordinated snapshot. The value timestamp is the observation timestamp supplied by the source, interpreted in the Madrid time zone; the download time is not presented as the measurement time.
 
-Polling every 20 minutes does **not** imply that every official dataset receives a new observation every 20 minutes. Freshness ultimately depends on the Comunidad de Madrid source.
+The AZUL_INTERNET page identifies the hour in solar time. The integration converts it to Europe/Madrid local time using the official summer/winter offset note. These are automatic, unvalidated readings pending review, not instantaneous measurements. Freshness ultimately depends on the Comunidad de Madrid source.
 
-The Comunidad de Madrid states that meteorological information from this network is contextual information for air-quality monitoring; official meteorological information is provided by [AEMET](https://www.aemet.es/).
+Each sensor exposes `observation_time`, `official_validation` when the source provides one, and `data_source`. For online meteorology, `official_validation` is empty because the page does not publish a V/T/N flag; the page itself states that the values are pending validation.
+
+These are observations from the air-quality network itself, not a forecast or a substitute for a general meteorological service.
 
 ## Availability and invalid values
 
@@ -131,7 +134,7 @@ The integration is read-only. It:
 - executes no downloaded code;
 - sends no commands to monitoring stations.
 
-Home Assistant only makes HTTPS requests to the public Comunidad de Madrid data service.
+Home Assistant only makes HTTPS requests to the public Comunidad de Madrid data services. One online request is made per selected station and the response is shared by all seven meteorological entities for that station.
 
 ## Troubleshooting
 
