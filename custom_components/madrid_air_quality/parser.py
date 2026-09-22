@@ -100,12 +100,15 @@ def _metric_info(code: str) -> tuple[str, str | None, str | None]:
 def parse_measurements(
     payloads: list[Any], station_codes: set[str], now: datetime | None = None
 ) -> tuple[dict[str, dict[str, Metric]], datetime | None]:
-    """Select the newest hourly value per station and magnitude.
+    """Select the newest usable hourly value per station and magnitude.
 
     Each source row contains h01..h24 plus matching validation fields. A value
-    with an invalid marker remains present as a Metric with value None.
+    with a temporary (T) or valid (V) marker is usable. Newer invalid (N)
+    records do not hide the newest usable record; an invalid record is kept
+    only when no usable record exists for that station and magnitude.
     """
-    selected: dict[tuple[str, str], tuple[datetime, Metric]] = {}
+    latest_any: dict[tuple[str, str], tuple[datetime, Metric]] = {}
+    latest_valid: dict[tuple[str, str], tuple[datetime, Metric]] = {}
     for payload in payloads:
         for row in _records(payload):
             station = _text(row.get("punto_muestreo", "")).split("_")[0]
@@ -125,18 +128,23 @@ def parse_measurements(
                 if f"h{hour:02d}" not in row and f"v{hour:02d}" not in row:
                     continue
                 timestamp = _timestamp(row, hour)
-                if timestamp is None or (now and timestamp > now) or timestamp <= selected.get(
-                    (station, code), (datetime.min.replace(tzinfo=MADRID), None)
+                key = (station, code)
+                if timestamp is None or (now and timestamp > now) or timestamp <= latest_any.get(
+                    key, (datetime.min.replace(tzinfo=MADRID), None)
                 )[0]:
                     continue
                 raw = row.get(f"h{hour:02d}")
                 validation = _text(row.get(f"v{hour:02d}")) or None
                 valid = (not validation or validation.upper() not in {"N", "INVALID", "NO"}) and _number(raw) is not None
                 metric = Metric(code, name, abbreviation, unit, _number(raw) if valid else None, valid, timestamp, validation)
-                selected[(station, code)] = (timestamp, metric)
+                latest_any[key] = (timestamp, metric)
+                if valid:
+                    latest_valid[key] = (timestamp, metric)
     result: dict[str, dict[str, Metric]] = {}
     latest: datetime | None = None
-    for (station, code), (timestamp, metric) in selected.items():
+    for key, (timestamp, metric) in latest_any.items():
+        timestamp, metric = latest_valid.get(key, (timestamp, metric))
+        station, code = key
         result.setdefault(station, {})[code] = metric
         latest = max(latest, timestamp) if latest else timestamp
     return result, latest
