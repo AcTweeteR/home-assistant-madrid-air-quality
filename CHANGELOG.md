@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.3 - 2026-09-22
+
+- Keep the latest valid or provisional (`T`) pollutant observation when a newer source row is empty or invalid (`N`).
+- Preserve the official observation timestamp and validation marker for the selected value.
+
 ## 1.0.2 - 2026-09-22
 
 - Use the current official meteorological CSV resource instead of the stale JSON mirror.
