@@ -1,12 +1,15 @@
-"""Parsers for the official Comunidad de Madrid JSON files."""
+"""Parsers for official Comunidad de Madrid measurement resources."""
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+import re
+from datetime import datetime, time, timedelta
+from email.utils import parsedate_to_datetime
+from html.parser import HTMLParser
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from .const import INVALID_VALUES, MAGNITUDES
+from .const import INVALID_VALUES, MAGNITUDES, SOURCE_NAME, SOURCE_ONLINE_WEATHER
 from .models import Metric, Station
 
 MADRID = ZoneInfo("Europe/Madrid")
@@ -98,7 +101,10 @@ def _metric_info(code: str) -> tuple[str, str | None, str | None]:
 
 
 def parse_measurements(
-    payloads: list[Any], station_codes: set[str], now: datetime | None = None
+    payloads: list[Any],
+    station_codes: set[str],
+    now: datetime | None = None,
+    data_source: str | None = SOURCE_NAME,
 ) -> tuple[dict[str, dict[str, Metric]], datetime | None]:
     """Select the newest usable hourly value per station and magnitude.
 
@@ -136,7 +142,17 @@ def parse_measurements(
                 raw = row.get(f"h{hour:02d}")
                 validation = _text(row.get(f"v{hour:02d}")) or None
                 valid = (not validation or validation.upper() not in {"N", "INVALID", "NO"}) and _number(raw) is not None
-                metric = Metric(code, name, abbreviation, unit, _number(raw) if valid else None, valid, timestamp, validation)
+                metric = Metric(
+                    code,
+                    name,
+                    abbreviation,
+                    unit,
+                    _number(raw) if valid else None,
+                    valid,
+                    timestamp,
+                    validation,
+                    data_source,
+                )
                 latest_any[key] = (timestamp, metric)
                 if valid:
                     latest_valid[key] = (timestamp, metric)
@@ -148,3 +164,105 @@ def parse_measurements(
         result.setdefault(station, {})[code] = metric
         latest = max(latest, timestamp) if latest else timestamp
     return result, latest
+
+
+class _OnlineWeatherTableParser(HTMLParser):
+    """Extract table cells from the official server-rendered weather page."""
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.cells: list[str] = []
+        self._cell: list[str] | None = None
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag.lower() == "td":
+            self._cell = []
+
+    def handle_data(self, data: str) -> None:
+        if self._cell is not None:
+            self._cell.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() == "td" and self._cell is not None:
+            self.cells.append(" ".join(self._cell))
+            self._cell = None
+
+
+def _online_timestamp(hour_text: str, reference: datetime, now: datetime | None) -> datetime:
+    """Convert the site's solar hour to Europe/Madrid local time."""
+    match = re.fullmatch(r"(\d{1,2}):(\d{2})", hour_text.strip())
+    if not match:
+        raise ParseError("La página AZUL_INTERNET no contiene una hora válida")
+    solar_hour, minute = int(match.group(1)), int(match.group(2))
+    if solar_hour > 24 or minute > 59:
+        raise ParseError("La hora AZUL_INTERNET está fuera de rango")
+    solar_date = reference.astimezone(MADRID).date()
+    if solar_hour == 24:
+        solar_date += timedelta(days=1)
+        solar_hour = 0
+    solar_naive = datetime.combine(solar_date, time(solar_hour, minute))
+    # Probe after the possible DST transition.  Midnight has the winter
+    # offset on the spring transition day and the summer offset on the autumn
+    # transition day, so using midnight alone would be wrong for later hours.
+    offset_probe = (solar_naive + timedelta(hours=2)).replace(tzinfo=MADRID)
+    offset = offset_probe.utcoffset() or timedelta()
+    candidate = (solar_naive + offset).replace(tzinfo=MADRID)
+    comparison = now or reference.astimezone(MADRID)
+    if candidate > comparison + timedelta(minutes=10):
+        candidate -= timedelta(days=1)
+    return candidate
+
+
+def parse_online_weather(
+    html: str,
+    station_code: str,
+    response_date: str | None,
+    now: datetime | None = None,
+) -> dict[str, Metric]:
+    """Parse the official station page's latest hourly weather table.
+
+    AZUL_INTERNET does not publish validation flags for this table. Its page
+    explicitly labels the readings as automatic and pending review, so a
+    numeric cell is represented as usable with ``raw_validation=None`` and
+    the source is exposed separately.
+    """
+    parser = _OnlineWeatherTableParser()
+    parser.feed(html)
+    labels = {"VV": "81", "DV": "82", "TMP": "83", "HR": "86", "PRE": "87", "RS": "88", "LL": "89"}
+    values: dict[str, str] = {}
+    for index, cell in enumerate(parser.cells[:-1]):
+        match = re.match(r"\s*(VV|DV|TMP|HR|PRE|RS|LL)\b", cell)
+        if match:
+            values[labels[match.group(1)]] = parser.cells[index + 1].strip()
+    hour_match = re.search(
+        r"Ultima media horaria a las\s*([0-9]{1,2}:[0-9]{2})",
+        html,
+        re.DOTALL | re.IGNORECASE,
+    )
+    if not hour_match or set(values) != set(labels.values()):
+        raise ParseError("La página AZUL_INTERNET no contiene la tabla meteorológica esperada")
+    try:
+        reference = parsedate_to_datetime(response_date) if response_date else None
+    except (TypeError, ValueError):
+        reference = None
+    if reference is None:
+        reference = now or datetime.now(tz=MADRID)
+    if reference.tzinfo is None:
+        reference = reference.replace(tzinfo=MADRID)
+    observed_at = _online_timestamp(hour_match.group(1), reference, now)
+    result: dict[str, Metric] = {}
+    for code, raw in values.items():
+        number = _number(raw)
+        name, abbreviation, unit = _metric_info(code)
+        result[code] = Metric(
+            code,
+            name,
+            abbreviation,
+            unit,
+            number,
+            number is not None,
+            observed_at,
+            None,
+            SOURCE_ONLINE_WEATHER,
+        )
+    return result

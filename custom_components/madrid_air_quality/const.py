@@ -6,18 +6,18 @@ from homeassistant.const import Platform
 
 DOMAIN = "madrid_air_quality"
 NAME = "Madrid Air Quality & Weather"
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 PLATFORMS = [Platform.SENSOR]
 CONF_STATIONS = "stations"
 CONF_KNOWN_METRICS = "known_metrics"
-UPDATE_INTERVAL_MINUTES = 20
+UPDATE_INTERVAL_MINUTES = 60
 
 CKAN_API = "https://datos.comunidad.madrid/api/3/action/package_show?id={}"
 CATALOG_PACKAGE = "calidad_aire_estaciones"
 AIR_PACKAGE = "calidad_aire_datos_dia"
 WEATHER_PACKAGE = "calidad_aire_datos_meteo_mes"
 
-# These resource URLs are the official JSON resources exposed by CKAN. The
+# These resource URLs are the official resources exposed by CKAN. The
 # package endpoints above remain the canonical source of metadata; the URLs are
 # kept here so normal polling does not make an extra CKAN request every cycle.
 CATALOG_URL = (
@@ -32,6 +32,44 @@ WEATHER_URL = (
     "https://datos.comunidad.madrid/dataset/7e2f01e3-fda0-4693-8f8f-206cf0d74bf4/"
     "resource/d61356c9-9055-4e6f-bffb-16695b01a2da/download/calidad_aire_datos_meteo_mes.csv"
 )
+ONLINE_WEATHER_BASE_URL = (
+    "https://gestiona.comunidad.madrid/azul_internet/html/web/"
+    "DatosEstacionAccion.icm?ESTADO_MENU=2&idEstacion="
+)
+# The public Comunidad de Madrid on-line index currently exposes these 28
+# stations with stable numeric links.  The mapping is complete for the
+# station catalogue used by this integration and is covered by tests.
+ONLINE_STATION_IDS = {
+    "28005002": 3,
+    "28006004": 4,
+    "28148004": 7,
+    "28049003": 9,
+    "28014002": 15,
+    "28123002": 18,
+    "28009001": 20,
+    "28134002": 114,
+    "28065014": 1,
+    "28074007": 2,
+    "28058004": 5,
+    "28092005": 6,
+    "28007004": 8,
+    "28013002": 13,
+    "28161001": 21,
+    "28106001": 111,
+    "28045002": 11,
+    "28080003": 12,
+    "28047002": 14,
+    "28127004": 112,
+    "28115003": 113,
+    "28067001": 19,
+    "28016001": 22,
+    "28120001": 110,
+    "28133002": 17,
+    "28171001": 23,
+    "28102001": 24,
+    "28180001": 16,
+}
+SOURCE_ONLINE_WEATHER = "Comunidad de Madrid AZUL_INTERNET (última media horaria)"
 SOURCE_NAME = "Portal de Datos Abiertos de la Comunidad de Madrid (CKAN)"
 SOURCE_CATALOG = "Red de Calidad del Aire. Estaciones"
 SOURCE_AIR = "Red de Calidad del Aire. Datos del día en curso"

@@ -35,3 +35,5 @@ Unknown codes are retained and exposed rather than silently discarded. The integ
 Officially invalid or missing readings are represented as unavailable, not as numeric zero.
 
 Sensor attributes include the official station code, magnitude code, abbreviation when known, observation time and official validation marker.
+
+Meteorological attributes also include `data_source`. The primary source is the official AZUL_INTERNET page for the same station and is an automatic, unvalidated hourly mean. If that page fails temporarily, the integration retains a valid value from the official monthly CSV fallback rather than replacing it with zero or an invented value.
