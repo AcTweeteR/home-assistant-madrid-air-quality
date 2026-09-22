@@ -6,7 +6,7 @@ from homeassistant.const import Platform
 
 DOMAIN = "madrid_air_quality"
 NAME = "Madrid Air Quality & Weather"
-VERSION = "1.0.4"
+VERSION = "1.0.5"
 PLATFORMS = [Platform.SENSOR]
 CONF_STATIONS = "stations"
 CONF_KNOWN_METRICS = "known_metrics"

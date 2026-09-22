@@ -22,15 +22,30 @@ from .models import Metric, Station
 
 def _device_class(code: str) -> SensorDeviceClass | None:
     return {
+        "1": SensorDeviceClass.SULPHUR_DIOXIDE,
+        "6": SensorDeviceClass.CO,
+        "7": SensorDeviceClass.NITROGEN_MONOXIDE,
+        "8": SensorDeviceClass.NITROGEN_DIOXIDE,
         "83": SensorDeviceClass.TEMPERATURE,
         "86": SensorDeviceClass.HUMIDITY,
-        "87": SensorDeviceClass.PRESSURE,
+        "87": SensorDeviceClass.ATMOSPHERIC_PRESSURE,
         "81": SensorDeviceClass.WIND_SPEED,
+        "82": SensorDeviceClass.WIND_DIRECTION,
         "88": SensorDeviceClass.IRRADIANCE,
+        "89": SensorDeviceClass.PRECIPITATION,
         "9": SensorDeviceClass.PM25,
         "10": SensorDeviceClass.PM10,
         "11": SensorDeviceClass.PM1,
+        "14": SensorDeviceClass.OZONE,
     }.get(code)
+
+
+def _state_class(code: str) -> SensorStateClass:
+    return (
+        SensorStateClass.MEASUREMENT_ANGLE
+        if code == "82"
+        else SensorStateClass.MEASUREMENT
+    )
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: Callable) -> None:
@@ -60,12 +75,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 
 class MadridSensor(CoordinatorEntity[MadridAirQualityCoordinator], SensorEntity):
     _attr_has_entity_name = True
-    _attr_state_class = SensorStateClass.MEASUREMENT
 
     def __init__(self, coordinator: MadridAirQualityCoordinator, station: Station, code: str) -> None:
         super().__init__(coordinator)
         self._station = station
         self._code = code
+        self._attr_state_class = _state_class(code)
         self._attr_unique_id = f"{DOMAIN}_{station.code}_{code.lower()}"
         self._attr_name = self._name_for(code)
         if code in MAGNITUDES:
@@ -96,6 +111,11 @@ class MadridSensor(CoordinatorEntity[MadridAirQualityCoordinator], SensorEntity)
 
     @property
     def native_unit_of_measurement(self) -> str | None:
+        # The official LL value is expressed as l/m², numerically identical to
+        # millimetres of accumulated precipitation. Use HA's canonical unit
+        # so the precipitation device class and unit conversion remain valid.
+        if self._code == "89":
+            return "mm"
         return self._metric.unit if self._metric else MAGNITUDES.get(self._code, (None, None, None))[2]
 
     @property
