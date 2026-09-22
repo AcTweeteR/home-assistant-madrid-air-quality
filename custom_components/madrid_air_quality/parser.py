@@ -97,7 +97,9 @@ def _metric_info(code: str) -> tuple[str, str | None, str | None]:
     return f"Magnitud {code}", None, None
 
 
-def parse_measurements(payloads: list[Any], station_codes: set[str]) -> tuple[dict[str, dict[str, Metric]], datetime | None]:
+def parse_measurements(
+    payloads: list[Any], station_codes: set[str], now: datetime | None = None
+) -> tuple[dict[str, dict[str, Metric]], datetime | None]:
     """Select the newest hourly value per station and magnitude.
 
     Each source row contains h01..h24 plus matching validation fields. A value
@@ -123,7 +125,9 @@ def parse_measurements(payloads: list[Any], station_codes: set[str]) -> tuple[di
                 if f"h{hour:02d}" not in row and f"v{hour:02d}" not in row:
                     continue
                 timestamp = _timestamp(row, hour)
-                if timestamp is None or timestamp <= selected.get((station, code), (datetime.min.replace(tzinfo=MADRID), None))[0]:
+                if timestamp is None or (now and timestamp > now) or timestamp <= selected.get(
+                    (station, code), (datetime.min.replace(tzinfo=MADRID), None)
+                )[0]:
                     continue
                 raw = row.get(f"h{hour:02d}")
                 validation = _text(row.get(f"v{hour:02d}")) or None

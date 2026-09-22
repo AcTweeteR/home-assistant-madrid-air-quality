@@ -1,5 +1,7 @@
 import json
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -90,3 +92,33 @@ def test_h24_is_midnight_of_the_following_day_and_wins_over_h23():
     assert metric.value == 11.0
     assert metric.observed_at.isoformat() == "2026-09-22T00:00:00+02:00"
     assert latest == metric.observed_at
+
+
+def test_future_h24_does_not_hide_current_temporary_observation():
+    payload = {
+        "data": [
+            {
+                "punto_muestreo": "28092005_1_38",
+                "magnitud": 1,
+                "ano": 2026,
+                "mes": 9,
+                "dia": 22,
+                "h03": 2.0,
+                "v03": "T",
+                "h24": "",
+                "v24": "N",
+            }
+        ]
+    }
+
+    metrics, _ = parse_measurements(
+        [payload],
+        {"28092005"},
+        datetime(2026, 9, 22, 5, tzinfo=ZoneInfo("Europe/Madrid")),
+    )
+
+    metric = metrics["28092005"]["1"]
+    assert metric.value == 2.0
+    assert metric.valid is True
+    assert metric.raw_validation == "T"
+    assert metric.observed_at.isoformat() == "2026-09-22T03:00:00+02:00"

@@ -6,7 +6,7 @@ from homeassistant.const import Platform
 
 DOMAIN = "madrid_air_quality"
 NAME = "Madrid Air Quality & Weather"
-VERSION = "1.0.1"
+VERSION = "1.0.2"
 PLATFORMS = [Platform.SENSOR]
 CONF_STATIONS = "stations"
 CONF_KNOWN_METRICS = "known_metrics"
@@ -30,7 +30,7 @@ AIR_URL = (
 )
 WEATHER_URL = (
     "https://datos.comunidad.madrid/dataset/7e2f01e3-fda0-4693-8f8f-206cf0d74bf4/"
-    "resource/dd692c0c-5698-4af1-9f6c-61b6b9a63782/download/calidad_aire_datos_meteo_mes.json"
+    "resource/d61356c9-9055-4e6f-bffb-16695b01a2da/download/calidad_aire_datos_meteo_mes.csv"
 )
 SOURCE_NAME = "Portal de Datos Abiertos de la Comunidad de Madrid (CKAN)"
 SOURCE_CATALOG = "Red de Calidad del Aire. Estaciones"
