@@ -1,0 +1,5 @@
+[
+{"current_units":{"apparent_temperature":"°C"},"current":{"time":1790201700,"interval":900,"apparent_temperature":22.3,"weather_code":2,"is_day":0}},
+{"location_id":1,"current_units":{"apparent_temperature":"°C"},"current":{"time":1790201700,"interval":900,"apparent_temperature":19.7,"weather_code":2,"is_day":0}},
+{"location_id":2,"current_units":{"apparent_temperature":"°C"},"current":{"time":1790201700,"interval":900,"apparent_temperature":22.7,"weather_code":2,"is_day":0}}
+]

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.6 - 2026-09-24
+
+- Add the official Ayuntamiento de Madrid air-quality station catalogue and network-wide current observations, without changing the 28 existing station identities.
+- Add municipal meteorology only at air stations whose official code and location match the municipal weather catalogue.
+- Add four location-based entities per selected station: Open-Meteo modelled apparent temperature and sky condition, plus locally calculated sunrise and sunset. Provider provenance remains in technical attributes, not visible names.
+- Use independent polling/failure domains: regional hourly, municipal 20-minute, Open-Meteo 15-minute, and local solar calculations. Preserve original observation timestamps and municipal V-only validation.
+
 ## 1.0.5 - 2026-09-22
 
 - Correct sensor device classes for the official SO2, CO, NO, NO2 and O3 magnitudes.

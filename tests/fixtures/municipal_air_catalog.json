@@ -1,0 +1,5 @@
+{"data":[
+{"CODIGO":"28079024","ESTACION":"Casa de Campo","DIRECCION":"Casa de Campo  (Terminal del Teleférico)","LATITUD":"40.4193577","LONGITUD":"-3.7473445","ALTITUD":"645","NOM_TIPO":"Suburbana"},
+{"CODIGO":"28079055","ESTACION":"Urb. Embajada","DIRECCION":"C/ Riaño (Barajas)","LATITUD":"40.4623628","LONGITUD":"-3.5805649","ALTITUD":"614","NOM_TIPO":"Urbana fondo"},
+{"CODIGO":"28079056","ESTACION":"Plaza Elíptica","DIRECCION":"Plaza Elíptica - Avda. Oporto","LATITUD":"40.3850336","LONGITUD":"-3.7187679","ALTITUD":"605","NOM_TIPO":"Urbana tráfico"}
+]}

@@ -1,0 +1,8 @@
+{"responseDate":"2026-09-23T23:22:20","totalRecords":90,"records":[
+{"PROVINCIA":"28","MUNICIPIO":"079","ESTACION":"24","MAGNITUD":"81","ANO":"2026","MES":"09","DIA":"23","H22":"0.4","V22":"V","H23":"0.2","V23":"V","H24":"0","V24":"N"},
+{"PROVINCIA":"28","MUNICIPIO":"079","ESTACION":"24","MAGNITUD":"83","ANO":"2026","MES":"09","DIA":"23","H22":"27.4","V22":"V","H23":"24.1","V23":"V","H24":"0","V24":"N"},
+{"PROVINCIA":"28","MUNICIPIO":"079","ESTACION":"24","MAGNITUD":"86","ANO":"2026","MES":"09","DIA":"23","H22":"23","V22":"V","H23":"30","V23":"V","H24":"0","V24":"N"},
+{"PROVINCIA":"28","MUNICIPIO":"079","ESTACION":"56","MAGNITUD":"81","ANO":"2026","MES":"09","DIA":"23","H22":"0","V22":"V","H23":"0.1","V23":"V","H24":"0","V24":"N"},
+{"PROVINCIA":"28","MUNICIPIO":"079","ESTACION":"56","MAGNITUD":"83","ANO":"2026","MES":"09","DIA":"23","H22":"26","V22":"V","H23":"25.3","V23":"V","H24":"0","V24":"N"},
+{"PROVINCIA":"28","MUNICIPIO":"079","ESTACION":"56","MAGNITUD":"86","ANO":"2026","MES":"09","DIA":"23","H22":"31","V22":"V","H23":"33","V23":"V","H24":"0","V24":"N"}
+]}
