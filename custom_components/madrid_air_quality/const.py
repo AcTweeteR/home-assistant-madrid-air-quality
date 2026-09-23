@@ -6,11 +6,36 @@ from homeassistant.const import Platform
 
 DOMAIN = "madrid_air_quality"
 NAME = "Madrid Air Quality & Weather"
-VERSION = "1.0.5"
+VERSION = "1.0.6"
 PLATFORMS = [Platform.SENSOR]
 CONF_STATIONS = "stations"
 CONF_KNOWN_METRICS = "known_metrics"
 UPDATE_INTERVAL_MINUTES = 60
+MUNICIPAL_UPDATE_INTERVAL_MINUTES = 20
+MODEL_UPDATE_INTERVAL_MINUTES = 15
+SOLAR_UPDATE_INTERVAL_MINUTES = 10
+
+MUNICIPAL_AIR_CATALOG_URL = (
+    "https://datos.madrid.es/dataset/212629-0-estaciones-control-aire/"
+    "resource/212629-0-estaciones-control-aire-csv/download/212629-0-estaciones-control-aire-csv.csv"
+)
+MUNICIPAL_WEATHER_CATALOG_URL = (
+    "https://datos.madrid.es/dataset/300360-0-meteorologicos-estaciones/"
+    "resource/300360-1-meteorologicos-estaciones-csv/download/300360-1-meteorologicos-estaciones-csv.csv"
+)
+MUNICIPAL_AIR_URL = (
+    "https://datos.madrid.es/dataset/212531-0-calidad-aire-tiempo-real/"
+    "resource/212531-0-calidad-aire-tiempo-real/download/212531-0-calidad-aire-tiempo-real.json"
+)
+MUNICIPAL_WEATHER_URL = (
+    "https://datos.madrid.es/dataset/300392-0-meteorologia-tiempo-real/"
+    "resource/300392-5-meteorologia-tiempo-real/download/300392-5-meteorologia-tiempo-real.json"
+)
+OPEN_METEO_URL = "https://api.open-meteo.com/v1/forecast"
+SOURCE_MUNICIPAL_AIR = "Ayuntamiento de Madrid: calidad del aire en tiempo real"
+SOURCE_MUNICIPAL_WEATHER = "Ayuntamiento de Madrid: meteorología en tiempo real"
+SOURCE_OPEN_METEO = "Open-Meteo Forecast API (modelo, no medición de la estación)"
+SOURCE_SOLAR = "Cálculo astronómico local (Astral)"
 
 CKAN_API = "https://datos.comunidad.madrid/api/3/action/package_show?id={}"
 CATALOG_PACKAGE = "calidad_aire_estaciones"
@@ -90,6 +115,7 @@ MAGNITUDES = {
     "20": ("Tolueno", "TOL", "µg/m³"),
     "22": ("Black Carbon", "BC", "µg/m³"),
     "30": ("Benceno", "BEN", "µg/m³"),
+    "35": ("Etilbenceno", "EBE", "µg/m³"),
     "42": ("Hidrocarburos totales", "HCT", "mg/m³"),
     "44": ("Hidrocarburos no metánicos", "HNM", "mg/m³"),
     "431": ("MetaParaXileno", "XIL", "µg/m³"),

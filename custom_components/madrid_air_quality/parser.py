@@ -74,7 +74,9 @@ def parse_catalog(payload: Any) -> dict[str, Station]:
             area_type=_text(row.get("estacion_tipo_area")),
             station_type=_text(row.get("estacion_tipo_estacion")),
             address=_text(row.get("estacion_direccion_postal")),
-            altitude=int(row["estacion_altitud"]) if row.get("estacion_altitud") else None,
+            altitude=int(row["estacion_altitud"])
+            if row.get("estacion_altitud")
+            else None,
             latitude=_coordinate(row.get("estacion_coord_latitud")),
             longitude=_coordinate(row.get("estacion_coord_longitud")),
         )
@@ -83,9 +85,79 @@ def parse_catalog(payload: Any) -> dict[str, Station]:
     return result
 
 
+def parse_municipal_catalog(
+    air_payload: Any, weather_payload: Any
+) -> dict[str, Station]:
+    """Match municipal weather to air stations only on code and exact location."""
+    weather = {
+        _text(row.get("CÓDIGO")): row
+        for row in _records(weather_payload)
+        if _text(row.get("CÓDIGO"))
+    }
+    stations: dict[str, Station] = {}
+    for row in _records(air_payload):
+        code = _text(row.get("CODIGO"))
+        name = _text(row.get("ESTACION"))
+        if len(code) != 8 or not name:
+            continue
+        meteorology = weather.get(code)
+        colocated = bool(
+            meteorology
+            and all(
+                _text(row.get(field)) == _text(meteorology.get(field))
+                for field in ("LATITUD", "LONGITUD", "ALTITUD")
+            )
+        )
+        stations[code] = Station(
+            code=code,
+            name=f"Madrid — {name}",
+            municipality="Madrid",
+            station_type=_text(row.get("NOM_TIPO")),
+            address=_text(row.get("DIRECCION")),
+            altitude=int(row["ALTITUD"]) if _text(row.get("ALTITUD")) else None,
+            latitude=_coordinate(row.get("LATITUD")),
+            longitude=_coordinate(row.get("LONGITUD")),
+            network="ayuntamiento",
+            weather_colocated=colocated,
+        )
+    if not stations:
+        raise ParseError("El catálogo municipal no contiene estaciones de aire")
+    return stations
+
+
+def parse_municipal_measurements(
+    payload: Any,
+    station_codes: set[str],
+    now: datetime,
+    data_source: str,
+) -> dict[str, dict[str, Metric]]:
+    """Adapt the municipal JSON while enforcing its V-only validation rule."""
+    if not isinstance(payload, dict) or not isinstance(payload.get("records"), list):
+        raise ParseError("La respuesta municipal no contiene records")
+    rows: list[dict[str, Any]] = []
+    for original in payload["records"]:
+        if not isinstance(original, dict):
+            raise ParseError("Registro municipal mal formado")
+        row = {key.lower(): value for key, value in original.items()}
+        row["punto_muestreo"] = _text(row.get("punto_muestreo")) or (
+            f"{_text(row.get('provincia')).zfill(2)}"
+            f"{_text(row.get('municipio')).zfill(3)}"
+            f"{_text(row.get('estacion')).zfill(3)}"
+        )
+        for hour in range(1, 25):
+            flag = f"v{hour:02d}"
+            if f"h{hour:02d}" in row or flag in row:
+                row[flag] = "V" if _text(row.get(flag)).upper() == "V" else "N"
+        rows.append(row)
+    metrics, _ = parse_measurements([{"data": rows}], station_codes, now, data_source)
+    return metrics
+
+
 def _timestamp(row: dict[str, Any], hour: int) -> datetime | None:
     try:
-        date = datetime(int(row["ano"]), int(row["mes"]), int(row["dia"]), tzinfo=MADRID)
+        date = datetime(
+            int(row["ano"]), int(row["mes"]), int(row["dia"]), tzinfo=MADRID
+        )
         if hour == 24:
             return date + timedelta(days=1)
         return date.replace(hour=hour)
@@ -135,13 +207,20 @@ def parse_measurements(
                     continue
                 timestamp = _timestamp(row, hour)
                 key = (station, code)
-                if timestamp is None or (now and timestamp > now) or timestamp <= latest_any.get(
-                    key, (datetime.min.replace(tzinfo=MADRID), None)
-                )[0]:
+                if (
+                    timestamp is None
+                    or (now and timestamp > now)
+                    or timestamp
+                    <= latest_any.get(key, (datetime.min.replace(tzinfo=MADRID), None))[
+                        0
+                    ]
+                ):
                     continue
                 raw = row.get(f"h{hour:02d}")
                 validation = _text(row.get(f"v{hour:02d}")) or None
-                valid = (not validation or validation.upper() not in {"N", "INVALID", "NO"}) and _number(raw) is not None
+                valid = (
+                    not validation or validation.upper() not in {"N", "INVALID", "NO"}
+                ) and _number(raw) is not None
                 metric = Metric(
                     code,
                     name,
@@ -188,7 +267,9 @@ class _OnlineWeatherTableParser(HTMLParser):
             self._cell = None
 
 
-def _online_timestamp(hour_text: str, reference: datetime, now: datetime | None) -> datetime:
+def _online_timestamp(
+    hour_text: str, reference: datetime, now: datetime | None
+) -> datetime:
     """Convert the site's solar hour to Europe/Madrid local time."""
     match = re.fullmatch(r"(\d{1,2}):(\d{2})", hour_text.strip())
     if not match:
@@ -228,7 +309,15 @@ def parse_online_weather(
     """
     parser = _OnlineWeatherTableParser()
     parser.feed(html)
-    labels = {"VV": "81", "DV": "82", "TMP": "83", "HR": "86", "PRE": "87", "RS": "88", "LL": "89"}
+    labels = {
+        "VV": "81",
+        "DV": "82",
+        "TMP": "83",
+        "HR": "86",
+        "PRE": "87",
+        "RS": "88",
+        "LL": "89",
+    }
     values: dict[str, str] = {}
     for index, cell in enumerate(parser.cells[:-1]):
         match = re.match(r"\s*(VV|DV|TMP|HR|PRE|RS|LL)\b", cell)
@@ -240,7 +329,9 @@ def parse_online_weather(
         re.DOTALL | re.IGNORECASE,
     )
     if not hour_match or set(values) != set(labels.values()):
-        raise ParseError("La página AZUL_INTERNET no contiene la tabla meteorológica esperada")
+        raise ParseError(
+            "La página AZUL_INTERNET no contiene la tabla meteorológica esperada"
+        )
     try:
         reference = parsedate_to_datetime(response_date) if response_date else None
     except (TypeError, ValueError):

@@ -1,8 +1,8 @@
 # Madrid Air Quality & Weather
 
-Integración personalizada para Home Assistant que incorpora las estaciones oficiales de la Red de Calidad del Aire de la Comunidad de Madrid y expone sus mediciones como sensores.
+Integración personalizada para Home Assistant que incorpora las estaciones oficiales de calidad del aire de la Comunidad de Madrid y del Ayuntamiento de Madrid.
 
-> Proyecto comunitario independiente. No está afiliado ni respaldado por la Comunidad de Madrid.
+> Proyecto comunitario independiente. No está afiliado ni respaldado por ninguna de las administraciones ni por Open-Meteo.
 
 ## Características
 
@@ -14,6 +14,8 @@ Integración personalizada para Home Assistant que incorpora las estaciones ofic
 - Conserva IDs estables y recuerda magnitudes aunque falten temporalmente.
 - Admite nuevos códigos oficiales sin tener que actualizar una lista cerrada de sensores.
 - Datos meteorológicos horarios de las mismas estaciones y datos de calidad del aire.
+- 24 estaciones adicionales de Madrid capital, mostradas como `Madrid — <nombre oficial>`.
+- Sensación térmica y estado del cielo estimados por Open-Meteo; amanecer y atardecer calculados localmente.
 - Instalación y actualizaciones mediante HACS.
 
 ## Instalación con HACS
@@ -67,6 +69,8 @@ Entre las meteorológicas pueden aparecer:
 
 En calidad del aire puede exponer, según la estación, SO₂, CO, NO, NO₂, NOx, O₃, PM10, PM2.5, PM1, benceno, tolueno, Black Carbon e hidrocarburos, entre otros.
 
+Cada estación con coordenadas oficiales incorpora además **Sensación térmica**, **Estado del cielo**, **Amanecer** y **Atardecer** en su mismo dispositivo. Los dos primeros son **estimaciones de modelo Open-Meteo para la ubicación**, NO mediciones de los instrumentos de la estación. Amanecer y atardecer son los siguientes eventos calculados localmente con Europe/Madrid. El nombre visible no incluye la fuente; el atributo técnico `data_source` sí la identifica.
+
 Los nombres completos quedan asociados a la estación, por ejemplo:
 
 - `Móstoles Temperatura (TMP)`
@@ -78,7 +82,7 @@ Si la Comunidad de Madrid empieza a publicar una magnitud desconocida, la integr
 
 ## Fuente y frecuencia
 
-La integración utiliza exclusivamente recursos públicos oficiales de la Comunidad de Madrid:
+Las mediciones físicas autonómicas utilizan recursos oficiales de la Comunidad de Madrid:
 
 - **Red de Calidad del Aire. Estaciones**
 - **Red de Calidad del Aire. Datos del día en curso**
@@ -86,6 +90,10 @@ La integración utiliza exclusivamente recursos públicos oficiales de la Comuni
 - **Red de calidad del aire. Datos meteorológicos del mes en curso** como respaldo si la página online no responde o no contiene datos válidos.
 
 La integración consulta la fuente meteorológica horaria cada 60 minutos. Todos los sensores de una estación reutilizan la misma respuesta; no se realiza una petición por entidad.
+
+Las estaciones de Madrid capital utilizan los catálogos y JSON oficiales del Ayuntamiento: [estaciones de aire](https://datos.madrid.es/dataset/212629-0-estaciones-control-aire), [contaminación actual](https://datos.madrid.es/dataset/212531-0-calidad-aire-tiempo-real), [estaciones meteorológicas](https://datos.madrid.es/dataset/300360-0-meteorologicos-estaciones) y [meteorología actual](https://datos.madrid.es/dataset/300392-0-meteorologia-tiempo-real). Se consultan cada 20 minutos en dos peticiones compartidas. La meteorología sólo se incorpora al dispositivo de aire cuando coinciden **código nacional y coordenadas**. Los valores `V` son utilizables; `N` y vacíos no. Son datos automáticos pendientes de revisión posterior. `responseDate` indica la respuesta, no la observación.
+
+Open-Meteo se consulta cada 15 minutos en **una petición conjunta** para las ubicaciones seleccionadas, sin clave ni configuración adicional. Sus resultados proceden de celdas de modelo próximas a las coordenadas solicitadas. Si falla, únicamente se afectan los sensores dependientes de Open-Meteo: las mediciones oficiales y el cálculo solar local continúan. Amanecer/atardecer se recalculan localmente con Astral y no requieren servicio externo.
 
 La web oficial expresa la hora en formato solar. La integración la convierte a Europe/Madrid aplicando +2 en verano y +1 en invierno. Son medias horarias automáticas pendientes de revisión, no datos instantáneos. Cada entidad conserva `observation_time` y muestra `data_source`.
 
@@ -131,4 +139,4 @@ Consulta [la guía de solución de problemas](docs/troubleshooting.md).
 
 ## Licencia
 
-El software se distribuye bajo licencia MIT. Los datos proceden del Portal de Datos Abiertos de la Comunidad de Madrid y están sujetos a las condiciones publicadas por la fuente oficial.
+El software se distribuye bajo licencia MIT. Las fuentes tienen sus propias condiciones de reutilización: los portales oficiales de ambas administraciones y [Open-Meteo](https://open-meteo.com/en/terms). La integración identifica la procedencia de cada entidad mediante `data_source`.

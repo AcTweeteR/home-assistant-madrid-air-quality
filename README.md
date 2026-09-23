@@ -4,11 +4,11 @@
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-custom%20integration-18BCF2.svg)](https://www.home-assistant.io/)
 [![License](https://img.shields.io/github/license/AcTweeteR/home-assistant-madrid-air-quality)](LICENSE)
 
-Home Assistant custom integration for the official air-quality and meteorological monitoring stations operated by the Comunidad de Madrid, Spain.
+Home Assistant custom integration for the official air-quality networks of the Comunidad de Madrid and the Ayuntamiento de Madrid, Spain.
 
 **Español:** [documentación en español](README.es.md)
 
-> Independent community project. It is not affiliated with or endorsed by the Comunidad de Madrid.
+> Independent community project. It is not affiliated with or endorsed by either administration or by Open-Meteo.
 
 ## Features
 
@@ -64,7 +64,7 @@ Review the release notes, install the update in HACS and restart Home Assistant 
 
 ## Stations and devices
 
-The station catalog is obtained from the official Comunidad de Madrid dataset. Each selected station becomes a separate Home Assistant device, identified internally by its official station code.
+The station lists come from the two official catalogues: 28 regional stations and 24 Madrid-city stations. Each selected station becomes one Home Assistant device, identified internally by its official eight-digit station code. City stations are displayed as `Madrid — <official station name>`. Existing regional device and entity identifiers are unchanged. The device identifies its operating network without adding the source to entity names.
 
 You can change the selected stations later from:
 
@@ -90,6 +90,8 @@ Typical meteorological entities include:
 
 Typical air-quality entities include SO₂, CO, NO, NO₂, NOx, O₃, PM10, PM2.5, PM1, benzene, toluene, Black Carbon and hydrocarbons when the station publishes them.
 
+Each station with official coordinates also has four location-based entities: **Apparent temperature**, **Sky condition**, **Sunrise** and **Sunset**. Apparent temperature and sky condition are Open-Meteo **model estimates for the requested location**, not physical measurements by that station. Sunrise and sunset are calculated locally and represent the next event in Europe/Madrid. Their names do not include a provider; `data_source` identifies their provenance.
+
 Home Assistant combines the device and entity names, producing names such as:
 
 - `Móstoles Temperatura (TMP)`
@@ -103,7 +105,7 @@ See [Entities and sensors](docs/sensors.md) for details.
 
 ## Data sources and update frequency
 
-The integration uses only official resources from the [Comunidad de Madrid Open Data Portal](https://datos.comunidad.madrid/):
+Physical air-quality and meteorological measurements come only from the relevant official network. Regional stations use the [Comunidad de Madrid Open Data Portal](https://datos.comunidad.madrid/):
 
 - **Red de Calidad del Aire. Estaciones** — station catalog and metadata.
 - **Red de Calidad del Aire. Datos del día en curso** — current-day air-quality measurements.
@@ -112,11 +114,15 @@ The integration uses only official resources from the [Comunidad de Madrid Open 
 
 Home Assistant polls the hourly meteorological source every 60 minutes. Air-quality and fallback CSV data are included in the same coordinated snapshot. The value timestamp is the observation timestamp supplied by the source, interpreted in the Madrid time zone; the download time is not presented as the measurement time.
 
+Madrid-city stations use the Ayuntamiento's [air-quality catalogue](https://datos.madrid.es/dataset/212629-0-estaciones-control-aire), [air-quality current data](https://datos.madrid.es/dataset/212531-0-calidad-aire-tiempo-real), [meteorological catalogue](https://datos.madrid.es/dataset/300360-0-meteorologicos-estaciones) and [meteorological current data](https://datos.madrid.es/dataset/300392-0-meteorologia-tiempo-real). One air and one meteorological JSON response cover the selected city stations; they are polled every 20 minutes. Meteorology is attached to an air-quality device **only when the national station code and coordinates match**. Not every station measures every parameter. The current files can omit an entire station temporarily. Municipal `V` flags are usable; `N` and missing values are not. Current automatic readings are pending later review. The source's `responseDate` is not the observation time.
+
+[Open-Meteo Forecast API](https://open-meteo.com/en/docs) supplies `current.apparent_temperature`, `weather_code` and `is_day` for all selected coordinates in **one** request every 15 minutes. The model resolves each requested coordinate to a nearby grid cell; it must not be confused with station hardware. No API key or user configuration is required. A separate local astronomical timer calculates the next sunrise and sunset using Astral, which Home Assistant already depends on. Outages of Open-Meteo do not block either official feed or solar calculation.
+
 The AZUL_INTERNET page identifies the hour in solar time. The integration converts it to Europe/Madrid local time using the official summer/winter offset note. These are automatic, unvalidated readings pending review, not instantaneous measurements. Freshness ultimately depends on the Comunidad de Madrid source.
 
 Each sensor exposes `observation_time`, `official_validation` when the source provides one, and `data_source`. For online meteorology, `official_validation` is empty because the page does not publish a V/T/N flag; the page itself states that the values are pending validation.
 
-These are observations from the air-quality network itself, not a forecast or a substitute for a general meteorological service.
+The physical sensors are observations from their air-quality networks, not forecasts. The four location-based entities have the distinct provenance described above. See [Entities and sensors](docs/sensors.md).
 
 ## Availability and invalid values
 
@@ -134,7 +140,7 @@ The integration is read-only. It:
 - executes no downloaded code;
 - sends no commands to monitoring stations.
 
-Home Assistant only makes HTTPS requests to the public Comunidad de Madrid data services. One online request is made per selected station and the response is shared by all seven meteorological entities for that station.
+Home Assistant makes HTTPS requests to the public Comunidad de Madrid, Ayuntamiento de Madrid and Open-Meteo services. For the regional online meteorology there is one station-page request per selected station, shared by its seven physical meteorological entities; the municipal and Open-Meteo endpoints are requested once per selected network/update, never once per entity.
 
 ## Troubleshooting
 

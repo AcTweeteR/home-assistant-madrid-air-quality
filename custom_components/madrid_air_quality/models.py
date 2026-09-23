@@ -19,6 +19,8 @@ class Station:
     altitude: int | None = None
     latitude: float | None = None
     longitude: float | None = None
+    network: str = "comunidad"
+    weather_colocated: bool = False
 
 
 @dataclass(frozen=True)
