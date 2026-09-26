@@ -1,12 +1,14 @@
 {
   "domain": "madrid_air_quality",
   "name": "Madrid Air Quality & Weather",
-  "codeowners": ["@AcTweeteR"],
+  "codeowners": [
+    "@AcTweeteR"
+  ],
   "config_flow": true,
   "documentation": "https://github.com/AcTweeteR/home-assistant-madrid-air-quality",
   "integration_type": "hub",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/AcTweeteR/home-assistant-madrid-air-quality/issues",
   "requirements": [],
-  "version": "1.0.6"
+  "version": "1.0.7"
 }
