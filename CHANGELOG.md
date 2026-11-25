@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.8 - 2026-11-25
+
+- Restore regional pollutant observations using the current official daily JSON resource.
+- Fix the Home Assistant options form so users can change the selected stations.
+- Align the diagnostic version and HTTP user agent with the release version.
+
 ## 1.0.6 - 2026-09-24
 
 - Add the official Ayuntamiento de Madrid air-quality station catalogue and network-wide current observations, without changing the 28 existing station identities.
