@@ -51,7 +51,7 @@ class MadridAirQualityApi:
             ) as response:
                 response.raise_for_status()
                 return await response.text(), response.headers.get("Date")
-        except (ClientError, asyncio.TimeoutError) as err:
+        except (TimeoutError, ClientError) as err:
             raise MadridAirQualityApiError(f"No se pudo leer {url}: {err}") from err
 
     async def _get_json(self, url: str) -> Any:
